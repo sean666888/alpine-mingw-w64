@@ -40,7 +40,15 @@ RUN curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
  && gpg --batch --yes --delete-keys "$BINUTILS_KEY" && rm -Rf /root/.gnupg \
  && tar -xjf binutils.tar.bz2 \
  && mkdir build \
- && ( cd build && ../binutils-$BINUTILS_VERSION/configure --prefix=$MINGW_ROOT --with-sysroot=$MINGW_ROOT --enable-targets=x86_64-w64-mingw32 --target=x86_64-w64-mingw32 && make && make install && cd .. ) \
+ && ( cd build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../binutils-$BINUTILS_VERSION/configure \
+        --prefix=$MINGW_ROOT \
+        --with-sysroot=$MINGW_ROOT \
+        --target=x86_64-w64-mingw32 \
+        --disable-maintainer-mode \
+        --disable-multilib \
+        --enable-lto \
+        --disable-werror \
+    && make && make install && cd .. ) \
  && rm -Rf build/ binutils-$BINUTILS_VERSION/ binutils.tar.bz2 binutils.tar.bz2.sig
 
 ENV PATH $MINGW_ROOT/bin:$PATH
@@ -61,7 +69,7 @@ RUN curl -fsSL "$GCC_DOWNLOAD_URL" -o gcc.tar.bz2 \
  && tar -xjf gcc.tar.bz2 && rm -f gcc.tar.bz2
 
 RUN mkdir gcc-build \
- && ( cd gcc-build && ../gcc-$GCC_VERSION/configure \
+ && ( cd gcc-build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../gcc-$GCC_VERSION/configure \
         --target=x86_64-w64-mingw32 \
         --disable-multilib \
         --enable-64bit \
@@ -79,11 +87,13 @@ RUN mkdir gcc-build \
         --with-mpc=/usr \
         --with-cloog=/usr \
         --enable-lto \
+        --disable-maintainer-mode \
+        --disable-werror \
     && make all-gcc && make install-gcc \
     && cd .. )
 
 RUN mkdir build \
- && ( cd build && ../mingw-w64-v$MINGW_VERSION/mingw-w64-crt/configure --prefix=$MINGW_ROOT/x86_64-w64-mingw32 --enable-lib64 --host=x86_64-w64-mingw32 && make && make install && cd .. ) \
+ && ( cd build && CFLAGS="-Os" CXXFLAGS="-Os" ../mingw-w64-v$MINGW_VERSION/mingw-w64-crt/configure --prefix=$MINGW_ROOT/x86_64-w64-mingw32 --enable-lib64 --host=x86_64-w64-mingw32 && make && make install && cd .. ) \
  && rm -Rf build/ mingw-w64-v$MINGW_VERSION/
 
 RUN ( cd gcc-build && make all-target-libgcc && make install-target-libgcc && cd .. )
