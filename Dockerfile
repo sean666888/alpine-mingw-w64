@@ -35,7 +35,7 @@ ENV GCC_DOWNLOAD_SHA512 234dd9b1bdc9a9c6e352216a7ef4ccadc6c07f156006a59759c5e0e6
 
 RUN curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
  && curl -fsSL "$BINUTILS_DOWNLOAD_SIG" -o binutils.tar.bz2.sig \
- && gpg --batch --keyserver pgp.mit.edu --keyserver-options http-proxy=$http_proxy --recv-keys "$BINUTILS_KEY" \
+ && gpg --batch --keyserver pgp.mit.edu `if test "x$http_proxy" != "x"; then echo "--keyserver-options http-proxy=$http_proxy"; fi` --recv-keys "$BINUTILS_KEY" \
  && gpg --batch --verify binutils.tar.bz2.sig binutils.tar.bz2 \
  && gpg --batch --yes --delete-keys "$BINUTILS_KEY" && rm -Rf /root/.gnupg \
  && tar -xjf binutils.tar.bz2 \
