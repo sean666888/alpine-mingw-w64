@@ -37,9 +37,9 @@ RUN apk add --no-cache \
  && echo "$GCC_DOWNLOAD_SHA512  gcc.tar.bz2" | sha512sum -c - \
  && apk del --no-cache --purge \
     curl \
-    gnupg
-
-RUN apk add --no-cache \
+    gnupg \
+ # Install build dependencies
+ && apk add --no-cache \
     build-base \
     flex \
     bison \
