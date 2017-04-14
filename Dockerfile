@@ -1,21 +1,5 @@
 FROM alpine:3.5
 
-RUN apk add --no-cache \
-    build-base \
-    flex \
-    bison \
-    gmp \
-    gmp-dev \
-    mpfr3 \
-    mpfr-dev \
-    mpc1 \
-    mpc1-dev \
-    cloog \
-    cloog-dev \
-    curl \
-    gnupg \
-    file
-
 RUN mkdir -p /mingw-build
 WORKDIR /mingw-build
 
@@ -33,11 +17,42 @@ ENV GCC_VERSION 6.3.0
 ENV GCC_DOWNLOAD_URL http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2
 ENV GCC_DOWNLOAD_SHA512 234dd9b1bdc9a9c6e352216a7ef4ccadc6c07f156006a59759c5e0e6a69f0abcdc14630eff11e3826dd6ba5933a8faa43043f3d1d62df6bd5ab1e82862f9bf78
 
-RUN curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
+ENV PATH $MINGW_ROOT/bin:$PATH
+
+RUN apk add --no-cache \
+    curl \
+    gnupg \
+ # Download binutils
+ && curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
  && curl -fsSL "$BINUTILS_DOWNLOAD_SIG" -o binutils.tar.bz2.sig \
  && gpg --batch --keyserver pgp.mit.edu `if test "x$http_proxy" != "x"; then echo "--keyserver-options http-proxy=$http_proxy"; fi` --recv-keys "$BINUTILS_KEY" \
  && gpg --batch --verify binutils.tar.bz2.sig binutils.tar.bz2 \
  && gpg --batch --yes --delete-keys "$BINUTILS_KEY" && rm -Rf /root/.gnupg \
+ && rm -f binutils.tar.bz2.sig \
+ # Download MinGW-w64
+ && curl -fsSL "$MINGW_DOWNLOAD_URL" -o mingw.tar.bz2 \
+ && echo "$MINGW_DOWNLOAD_SHA1  mingw.tar.bz2" | sha1sum -c - \
+ # Download GCC
+ && curl -fsSL "$GCC_DOWNLOAD_URL" -o gcc.tar.bz2 \
+ && echo "$GCC_DOWNLOAD_SHA512  gcc.tar.bz2" | sha512sum -c - \
+ && apk del --no-cache --purge \
+    curl \
+    gnupg
+
+RUN apk add --no-cache \
+    build-base \
+    flex \
+    bison \
+    gmp \
+    gmp-dev \
+    mpfr3 \
+    mpfr-dev \
+    mpc1 \
+    mpc1-dev \
+    cloog \
+    cloog-dev \
+    file \
+ # Build binutils
  && tar -xjf binutils.tar.bz2 \
  && mkdir build \
  && ( cd build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../binutils-$BINUTILS_VERSION/configure \
@@ -49,26 +64,16 @@ RUN curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
         --enable-lto \
         --disable-werror \
     && make && make install && cd .. ) \
- && rm -Rf build/ binutils-$BINUTILS_VERSION/ binutils.tar.bz2 binutils.tar.bz2.sig
-
-ENV PATH $MINGW_ROOT/bin:$PATH
-
-RUN curl -fsSL "$MINGW_DOWNLOAD_URL" -o mingw.tar.bz2 \
- && echo "$MINGW_DOWNLOAD_SHA1  mingw.tar.bz2" | sha1sum -c - \
- && tar -xjf mingw.tar.bz2 \
- && rm -f mingw.tar.bz2
-
-RUN mkdir build \
+ && rm -Rf build/ binutils-$BINUTILS_VERSION/ binutils.tar.bz2 \
+ # Install MinGW-w64 headers
+ && tar -xjf mingw.tar.bz2 && rm -f mingw.tar.bz2 \
+ && mkdir build \
  && ( cd build && ../mingw-w64-v$MINGW_VERSION/mingw-w64-headers/configure --prefix=$MINGW_ROOT/x86_64-w64-mingw32 --enable-sdk=all --enable-secure-api --host=x86_64-w64-mingw32 && make install && cd .. ) \
- && rm -Rf build/
-
-RUN ln -s $MINGW_ROOT/x86_64-w64-mingw32 $MINGW_ROOT/mingw
-
-RUN curl -fsSL "$GCC_DOWNLOAD_URL" -o gcc.tar.bz2 \
- && echo "$GCC_DOWNLOAD_SHA512  gcc.tar.bz2" | sha512sum -c - \
- && tar -xjf gcc.tar.bz2 && rm -f gcc.tar.bz2
-
-RUN mkdir gcc-build \
+ && rm -Rf build/ \
+ && ln -s $MINGW_ROOT/x86_64-w64-mingw32 $MINGW_ROOT/mingw \
+ # Build GCC stage1
+ && tar -xjf gcc.tar.bz2 && rm -f gcc.tar.bz2 \
+ && mkdir gcc-build \
  && ( cd gcc-build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../gcc-$GCC_VERSION/configure \
         --target=x86_64-w64-mingw32 \
         --disable-multilib \
@@ -90,18 +95,17 @@ RUN mkdir gcc-build \
         --disable-maintainer-mode \
         --disable-werror \
     && make all-gcc && make install-gcc \
-    && cd .. )
-
-RUN mkdir build \
+    && cd .. ) \
+ # Build MinGW-w64 CRT
+ && mkdir build \
  && ( cd build && CFLAGS="-Os" CXXFLAGS="-Os" ../mingw-w64-v$MINGW_VERSION/mingw-w64-crt/configure --prefix=$MINGW_ROOT/x86_64-w64-mingw32 --enable-lib64 --host=x86_64-w64-mingw32 && make && make install && cd .. ) \
- && rm -Rf build/ mingw-w64-v$MINGW_VERSION/
-
-RUN ( cd gcc-build && make all-target-libgcc && make install-target-libgcc && cd .. )
-
-RUN ( cd gcc-build && make && make install && cd .. ) \
- && rm -Rf gcc-build/ gcc-$GCC_VERSION/
-
-RUN apk del --no-cache --purge \
+ && rm -Rf build/ mingw-w64-v$MINGW_VERSION/ \
+ # Build GCC stage2
+ && ( cd gcc-build && make all-target-libgcc && make install-target-libgcc && cd .. ) \
+ # Build GCC
+ && ( cd gcc-build && make && make install && cd .. ) \
+ && rm -Rf gcc-build/ gcc-$GCC_VERSION/ \
+ && apk del --no-cache --purge \
     build-base \
     flex \
     bison \
@@ -109,8 +113,6 @@ RUN apk del --no-cache --purge \
     mpfr-dev \
     mpc1-dev \
     cloog-dev \
-    curl \
-    gnupg \
     file
 
 WORKDIR /
