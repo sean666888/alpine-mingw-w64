@@ -19,7 +19,7 @@ ENV GCC_DOWNLOAD_SHA512 234dd9b1bdc9a9c6e352216a7ef4ccadc6c07f156006a59759c5e0e6
 
 ENV PATH $MINGW_ROOT/bin:$PATH
 
-RUN apk add --no-cache \
+RUN apk add --no-cache --virtual download-dependencies \
     curl \
     gnupg \
  # Download binutils
@@ -35,23 +35,22 @@ RUN apk add --no-cache \
  # Download GCC
  && curl -fsSL "$GCC_DOWNLOAD_URL" -o gcc.tar.bz2 \
  && echo "$GCC_DOWNLOAD_SHA512  gcc.tar.bz2" | sha512sum -c - \
- && apk del --no-cache --purge \
-    curl \
-    gnupg \
+ && apk del --purge download-dependencies \
  # Install build dependencies
- && apk add --no-cache \
+ && apk add --no-cache --virtual build-dependencies \
     build-base \
     flex \
     bison \
-    gmp \
     gmp-dev \
-    mpfr3 \
     mpfr-dev \
-    mpc1 \
     mpc1-dev \
-    cloog \
     cloog-dev \
     file \
+ && apk add --no-cache \
+    gmp \
+    mpfr3 \
+    mpc1 \
+    cloog \
  # Build binutils
  && tar -xjf binutils.tar.bz2 \
  && mkdir build \
@@ -105,15 +104,7 @@ RUN apk add --no-cache \
  # Build GCC
  && ( cd gcc-build && make && make install && cd .. ) \
  && rm -Rf gcc-build/ gcc-$GCC_VERSION/ \
- && apk del --no-cache --purge \
-    build-base \
-    flex \
-    bison \
-    gmp-dev \
-    mpfr-dev \
-    mpc1-dev \
-    cloog-dev \
-    file
+ && apk del --purge build-dependencies
 
 WORKDIR /
 RUN rm -Rf /mingw-build/
