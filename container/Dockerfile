@@ -25,7 +25,7 @@ RUN apk add --no-cache \
  # Download binutils
  && curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
  && curl -fsSL "$BINUTILS_DOWNLOAD_SIG" -o binutils.tar.bz2.sig \
- && gpg --batch --keyserver pgp.mit.edu `if test "x$http_proxy" != "x"; then echo "--keyserver-options http-proxy=$http_proxy"; fi` --recv-keys "$BINUTILS_KEY" \
+ && gpg --batch --keyserver pgp.mit.edu `if test "x$HTTP_PROXY" != "x"; then echo "--keyserver-options http-proxy=$HTTP_PROXY"; fi` --recv-keys "$BINUTILS_KEY" \
  && gpg --batch --verify binutils.tar.bz2.sig binutils.tar.bz2 \
  && gpg --batch --yes --delete-keys "$BINUTILS_KEY" && rm -Rf /root/.gnupg \
  && rm -f binutils.tar.bz2.sig \
