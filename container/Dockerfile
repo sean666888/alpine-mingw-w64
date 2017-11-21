@@ -1,8 +1,5 @@
 FROM alpine:3.5
 
-RUN mkdir -p /mingw-build
-WORKDIR /mingw-build
-
 ENV BINUTILS_VERSION 2.28
 ENV BINUTILS_DOWNLOAD_URL http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.bz2
 ENV BINUTILS_DOWNLOAD_SIG http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.bz2.sig
@@ -22,6 +19,8 @@ ENV PATH $MINGW_ROOT/bin:$PATH
 RUN apk add --no-cache --virtual download-dependencies \
     curl \
     gnupg \
+ && mkdir -p /mingw-build \
+ && cd /mingw-build \
  # Download binutils
  && curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
  && curl -fsSL "$BINUTILS_DOWNLOAD_SIG" -o binutils.tar.bz2.sig \
@@ -104,7 +103,6 @@ RUN apk add --no-cache --virtual download-dependencies \
  # Build GCC
  && ( cd gcc-build && make && make install && cd .. ) \
  && rm -Rf gcc-build/ gcc-$GCC_VERSION/ \
- && apk del --purge build-dependencies
-
-WORKDIR /
-RUN rm -Rf /mingw-build/
+ && apk del --purge build-dependencies \
+ && cd / \
+ && rm -Rf /mingw-build/
