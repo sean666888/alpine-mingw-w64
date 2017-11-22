@@ -1,18 +1,18 @@
 FROM alpine:3.6
 
-ENV BINUTILS_VERSION 2.28
-ENV BINUTILS_DOWNLOAD_URL http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.bz2
-ENV BINUTILS_DOWNLOAD_SIG http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.bz2.sig
-ENV BINUTILS_KEY C3126D3B4AE55E93
+ENV BINUTILS_VERSION 2.29.1
+ENV BINUTILS_DOWNLOAD_URL http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.xz
+ENV BINUTILS_DOWNLOAD_SIG http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.xz.sig
+ENV BINUTILS_KEY 13FCEF89DD9E3C4F
 
-ENV MINGW_VERSION 5.0.2
+ENV MINGW_VERSION 5.0.3
 ENV MINGW_DOWNLOAD_URL https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v$MINGW_VERSION.tar.bz2/download
-ENV MINGW_DOWNLOAD_SHA1 bb5409f034abb7c021b3e1c14db433fd253cbb59
+ENV MINGW_DOWNLOAD_SHA1 96278378b829695007ce6a527278cba19cb829f2
 ENV MINGW_ROOT /usr/local/mingw
 
-ENV GCC_VERSION 6.3.0
-ENV GCC_DOWNLOAD_URL http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.bz2
-ENV GCC_DOWNLOAD_SHA512 234dd9b1bdc9a9c6e352216a7ef4ccadc6c07f156006a59759c5e0e6a69f0abcdc14630eff11e3826dd6ba5933a8faa43043f3d1d62df6bd5ab1e82862f9bf78
+ENV GCC_VERSION 7.2.0
+ENV GCC_DOWNLOAD_URL http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz
+ENV GCC_DOWNLOAD_SHA512 f853cd6530b4055d8d8289da74687cb4c6d5f363598d386332d31852b581bac76c3adb7d61889edec3b779f63d8646f0122840f12965ce4a4389ba535dbbb6e1
 
 ENV PATH $MINGW_ROOT/bin:$PATH
 
@@ -22,18 +22,18 @@ RUN apk add --no-cache --virtual download-dependencies \
  && mkdir -p /mingw-build \
  && cd /mingw-build \
  # Download binutils
- && curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.bz2 \
- && curl -fsSL "$BINUTILS_DOWNLOAD_SIG" -o binutils.tar.bz2.sig \
+ && curl -fsSL "$BINUTILS_DOWNLOAD_URL" -o binutils.tar.xz \
+ && curl -fsSL "$BINUTILS_DOWNLOAD_SIG" -o binutils.tar.xz.sig \
  && gpg --batch --keyserver pgp.mit.edu `if test "x$HTTP_PROXY" != "x"; then echo "--keyserver-options http-proxy=$HTTP_PROXY"; fi` --recv-keys "$BINUTILS_KEY" \
- && gpg --batch --verify binutils.tar.bz2.sig binutils.tar.bz2 \
+ && gpg --batch --verify binutils.tar.xz.sig binutils.tar.xz \
  && gpg --batch --yes --delete-keys "$BINUTILS_KEY" && rm -Rf /root/.gnupg \
- && rm -f binutils.tar.bz2.sig \
+ && rm -f binutils.tar.xz.sig \
  # Download MinGW-w64
  && curl -fsSL "$MINGW_DOWNLOAD_URL" -o mingw.tar.bz2 \
  && echo "$MINGW_DOWNLOAD_SHA1  mingw.tar.bz2" | sha1sum -c - \
  # Download GCC
- && curl -fsSL "$GCC_DOWNLOAD_URL" -o gcc.tar.bz2 \
- && echo "$GCC_DOWNLOAD_SHA512  gcc.tar.bz2" | sha512sum -c - \
+ && curl -fsSL "$GCC_DOWNLOAD_URL" -o gcc.tar.xz \
+ && echo "$GCC_DOWNLOAD_SHA512  gcc.tar.xz" | sha512sum -c - \
  && apk del --purge download-dependencies \
  # Install build dependencies
  && apk add --no-cache --virtual build-dependencies \
@@ -51,7 +51,7 @@ RUN apk add --no-cache --virtual download-dependencies \
     mpc1 \
     cloog \
  # Build binutils
- && tar -xjf binutils.tar.bz2 \
+ && tar -xJf binutils.tar.xz && rm -f binutils.tar.xz \
  && mkdir build \
  && ( cd build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../binutils-$BINUTILS_VERSION/configure \
         --prefix=$MINGW_ROOT \
@@ -62,7 +62,7 @@ RUN apk add --no-cache --virtual download-dependencies \
         --enable-lto \
         --disable-werror \
     && make && make install && cd .. ) \
- && rm -Rf build/ binutils-$BINUTILS_VERSION/ binutils.tar.bz2 \
+ && rm -Rf build/ binutils-$BINUTILS_VERSION/ \
  # Install MinGW-w64 headers
  && tar -xjf mingw.tar.bz2 && rm -f mingw.tar.bz2 \
  && mkdir build \
@@ -70,7 +70,7 @@ RUN apk add --no-cache --virtual download-dependencies \
  && rm -Rf build/ \
  && ln -s $MINGW_ROOT/x86_64-w64-mingw32 $MINGW_ROOT/mingw \
  # Build GCC stage1
- && tar -xjf gcc.tar.bz2 && rm -f gcc.tar.bz2 \
+ && tar -xJf gcc.tar.xz && rm -f gcc.tar.xz \
  && mkdir gcc-build \
  && ( cd gcc-build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../gcc-$GCC_VERSION/configure \
         --target=x86_64-w64-mingw32 \
