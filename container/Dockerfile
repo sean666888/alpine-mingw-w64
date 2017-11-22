@@ -1,4 +1,4 @@
-FROM alpine:3.5
+FROM alpine:3.6
 
 ENV BINUTILS_VERSION 2.28
 ENV BINUTILS_DOWNLOAD_URL http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.bz2
