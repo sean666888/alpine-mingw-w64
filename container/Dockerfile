@@ -1,5 +1,7 @@
 FROM alpine:3.6
 
+ARG MINGW_ARCH=x86_64
+
 ENV BINUTILS_VERSION 2.29.1
 ENV BINUTILS_DOWNLOAD_URL http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.xz
 ENV BINUTILS_DOWNLOAD_SIG http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.xz.sig
@@ -56,7 +58,7 @@ RUN apk add --no-cache --virtual download-dependencies \
  && ( cd build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../binutils-$BINUTILS_VERSION/configure \
         --prefix=$MINGW_ROOT \
         --with-sysroot=$MINGW_ROOT \
-        --target=x86_64-w64-mingw32 \
+        --target=$MINGW_ARCH-w64-mingw32 \
         --disable-maintainer-mode \
         --disable-multilib \
         --enable-lto \
@@ -66,14 +68,14 @@ RUN apk add --no-cache --virtual download-dependencies \
  # Install MinGW-w64 headers
  && tar -xjf mingw.tar.bz2 && rm -f mingw.tar.bz2 \
  && mkdir build \
- && ( cd build && ../mingw-w64-v$MINGW_VERSION/mingw-w64-headers/configure --prefix=$MINGW_ROOT/x86_64-w64-mingw32 --enable-sdk=all --enable-secure-api --host=x86_64-w64-mingw32 && make install && cd .. ) \
+ && ( cd build && ../mingw-w64-v$MINGW_VERSION/mingw-w64-headers/configure --prefix=$MINGW_ROOT/$MINGW_ARCH-w64-mingw32 --enable-sdk=all --enable-secure-api --host=$MINGW_ARCH-w64-mingw32 && make install && cd .. ) \
  && rm -Rf build/ \
- && ln -s $MINGW_ROOT/x86_64-w64-mingw32 $MINGW_ROOT/mingw \
+ && ln -s $MINGW_ROOT/$MINGW_ARCH-w64-mingw32 $MINGW_ROOT/mingw \
  # Build GCC stage1
  && tar -xJf gcc.tar.xz && rm -f gcc.tar.xz \
  && mkdir gcc-build \
  && ( cd gcc-build && CFLAGS="-Os -march=native" CXXFLAGS="-Os -march=native" ../gcc-$GCC_VERSION/configure \
-        --target=x86_64-w64-mingw32 \
+        --target=$MINGW_ARCH-w64-mingw32 \
         --disable-multilib \
         --enable-64bit \
         --prefix=$MINGW_ROOT \
@@ -96,7 +98,7 @@ RUN apk add --no-cache --virtual download-dependencies \
     && cd .. ) \
  # Build MinGW-w64 CRT
  && mkdir build \
- && ( cd build && CFLAGS="-Os" CXXFLAGS="-Os" ../mingw-w64-v$MINGW_VERSION/mingw-w64-crt/configure --prefix=$MINGW_ROOT/x86_64-w64-mingw32 --enable-lib64 --host=x86_64-w64-mingw32 && make && make install && cd .. ) \
+ && ( cd build && CFLAGS="-Os" CXXFLAGS="-Os" ../mingw-w64-v$MINGW_VERSION/mingw-w64-crt/configure --prefix=$MINGW_ROOT/$MINGW_ARCH-w64-mingw32 --enable-lib`if [ $MINGW_ARCH = x86_64 ]; then echo 64; else echo 32; fi` --host=$MINGW_ARCH-w64-mingw32 && make && make install && cd .. ) \
  && rm -Rf build/ mingw-w64-v$MINGW_VERSION/ \
  # Build GCC stage2
  && ( cd gcc-build && make all-target-libgcc && make install-target-libgcc && cd .. ) \
