@@ -80,7 +80,6 @@ RUN apk add --no-cache --virtual download-dependencies \
         --enable-64bit \
         --prefix=$MINGW_ROOT \
         --with-sysroot=$MINGW_ROOT \
-        --enable-version-specific-runtime-libs \
         --enable-shared \
         --with-dwarf \
         --enable-fully-dynamic-string \
