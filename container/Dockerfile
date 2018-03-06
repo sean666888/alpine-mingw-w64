@@ -2,17 +2,17 @@ FROM alpine:3.7
 
 ARG MINGW_ARCH=x86_64
 
-ENV BINUTILS_VERSION 2.30
+ARG BINUTILS_VERSION=2.30
 ENV BINUTILS_DOWNLOAD_URL http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.xz
 ENV BINUTILS_DOWNLOAD_SIG http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VERSION.tar.xz.sig
 ENV BINUTILS_KEY 13FCEF89DD9E3C4F
 
-ENV MINGW_VERSION 5.0.3
+ARG MINGW_VERSION=5.0.3
 ENV MINGW_DOWNLOAD_URL https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v$MINGW_VERSION.tar.bz2/download
 ENV MINGW_DOWNLOAD_SHA1 96278378b829695007ce6a527278cba19cb829f2
 ENV MINGW_ROOT /usr/local/mingw
 
-ENV GCC_VERSION 7.3.0
+ARG GCC_VERSION=7.3.0
 ENV GCC_DOWNLOAD_URL http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz
 ENV GCC_DOWNLOAD_SHA512 ad41a7e4584e40e92cdf860bc0288500fbaf5dfb7e8c3fcabe9eba809c87bcfa85b46c19c19921b0cdf6d05483faede8287bb9ea120c0d1559449a70e602c8d4
 
