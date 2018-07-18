@@ -13,7 +13,7 @@ ENV MINGW_DOWNLOAD_SHA1 96278378b829695007ce6a527278cba19cb829f2
 ENV MINGW_ROOT /usr/local/mingw
 
 ARG GCC_VERSION=7.3.0
-ENV GCC_DOWNLOAD_URL http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz
+ENV GCC_DOWNLOAD_URL http://mirrors-usa.go-parts.com/gcc/releases/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz
 ENV GCC_DOWNLOAD_SHA512 ad41a7e4584e40e92cdf860bc0288500fbaf5dfb7e8c3fcabe9eba809c87bcfa85b46c19c19921b0cdf6d05483faede8287bb9ea120c0d1559449a70e602c8d4
 
 ENV PATH $MINGW_ROOT/bin:$PATH
