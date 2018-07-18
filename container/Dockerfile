@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM gradle:alpine
 
 ARG MINGW_ARCH=x86_64
 
