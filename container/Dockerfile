@@ -1,4 +1,4 @@
-FROM gradle:alpine
+FROM openjdk:alpine
 
 ARG MINGW_ARCH=x86_64
 
